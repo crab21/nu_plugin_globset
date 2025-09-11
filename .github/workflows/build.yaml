@@ -1,0 +1,35 @@
+---
+  name: "publish plugins for nushell"
+  
+  on:
+    workflow_dispatch:
+      inputs:
+        version:
+          description: "NuShell version to test against"
+          required: true
+          default: "0.106.0"
+    # push:
+    #   branches:
+    #     - plugins
+    #   paths:
+    #     - .github/workflows/publish-plugins.yaml
+
+  concurrency:
+    group: "publish-plugins"
+    cancel-in-progress: true
+
+  jobs:
+    proxy-images-matrix:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - uses: hustcer/setup-nu@v3
+          with:
+            version: ${{ inputs.version }}
+        - uses: actions-rust-lang/setup-rust-toolchain@v1
+        - shell: nu {0}
+          id: install-plugin-file-name
+          run: |
+            cargo build --release --target x86_64-unknown-linux-musl
+            cargo build --release --target aarch64-unknown-linux-musl
+            ls target/**/*

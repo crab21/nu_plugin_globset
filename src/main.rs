@@ -1,6 +1,8 @@
+
+
 use nu_plugin::{EvaluatedCall, JsonSerializer, serve_plugin};
 use nu_plugin::{EngineInterface, Plugin, PluginCommand };
-use nu_protocol::{IntoPipelineData, LabeledError, PipelineData, Signature, SyntaxShape, Type, Value};
+use nu_protocol::{ IntoPipelineData, LabeledError, PipelineData, Record, Signature, SyntaxShape, Type, Value};
 
 use globset::{Glob, GlobSetBuilder};
 
@@ -36,7 +38,7 @@ impl PluginCommand for GlobSet {
 
     fn signature(&self) -> Signature {
         Signature::build(PluginCommand::name(self))
-        .required("path", SyntaxShape::String, "the path to the file")
+        .required("path", SyntaxShape::List(SyntaxShape::String.into()), "the path to the file")
             .input_output_type(Type::List(Type::Any.into()), Type::List(Type::Int.into()))
     }
 
@@ -54,7 +56,7 @@ impl PluginCommand for GlobSet {
             .collect();
 
         // 从 call 获取目标路径 (第一个参数)
-        let target: String = call.req(0)?;
+        let targets: Vec<String> = call.req(0)?;
 
         // 构造 globset
         let mut builder = GlobSetBuilder::new();
@@ -68,7 +70,26 @@ impl PluginCommand for GlobSet {
             LabeledError::new(format!("Glob build error: {}", e))
         })?;
 
-        let result_matches = set.matches(target.as_str());
+
+        let mut result = Vec::new();
+
+        targets.iter().for_each(|target| {
+            let result_matches =  set.matches(target.as_str());
+            let mut rc  = Record::new();
+            rc.push("matches", Value::List { vals: result_matches.iter().map(|i| Value::Int { val: *i as i64, internal_span: call.head }).collect(), internal_span: call.head });
+            rc.push("is_match", Value::Bool { val: !result_matches.is_empty(), internal_span: call.head });
+            rc.push("file_path", Value::String { val: target.clone(), internal_span: call.head });
+            // let cv = CustomValue::new(Box::new(rc), "globset
+            result.push(Value::Record { val: rc.into(), internal_span: call.head  });
+            // result_matches.iter().for_each(|_i| {
+            //     result.push(Value::List {
+            //         val: result_matches,
+            //         internal_span: call.head,
+            //     });
+            // });
+          }
+        );
+        
 
         // // 逐个测试，收集匹配到的 index
         // let mut result = Vec::new();
@@ -83,13 +104,7 @@ impl PluginCommand for GlobSet {
         //         });
         //     }
         // }
-        let mut result = Vec::new();
-        result_matches.iter().for_each(|i| 
-            result.push(Value::Int {
-                val: *i as i64,
-                internal_span: call.head,
-            })
-        );
+
         // 返回 list<int>
         Ok(Value::List {
             vals: result,

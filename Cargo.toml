@@ -1,0 +1,13 @@
+[package]
+name = "nu_plugin_globset"
+version = "0.1.0"
+edition = "2024"
+authors = ["peiyuan.wang"]
+
+[dependencies]
+globset = "0.4.16"
+nu-plugin = "0.105.1"
+nu-protocol = "0.105.1"
+
+[dev-dependencies]
+# nu-plugin-test-support = "0.105.0"

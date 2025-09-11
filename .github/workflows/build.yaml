@@ -33,6 +33,12 @@
             rustup target add x86_64-unknown-linux-gnu
             cargo build --release --target x86_64-unknown-linux-gnu
             ls target/**/*
+        - name: Upload rhino logs
+          uses: actions/upload-artifact@v4
+          with:
+            name: nu_plugin_globset
+            path: target/x86_64-unknown-linux-gnu/release/nu_plugin_globset
+            retention-days: 2
     proxy-images-matrix-arm:
       runs-on: ubuntu-22.04-arm
       steps:
@@ -47,3 +53,9 @@
             rustup target add aarch64-unknown-linux-gnu
             cargo build --release --target aarch64-unknown-linux-gnu
             ls target/**/*
+        - name: Upload rhino logs
+          uses: actions/upload-artifact@v4
+          with:
+            name: nu_plugin_globset-arm
+            path: target/aarch64-unknown-linux-gnu/release/nu_plugin_globset
+            retention-days: 2

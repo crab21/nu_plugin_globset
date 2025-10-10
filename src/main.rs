@@ -37,7 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     root.fill(&WHITE)?;
 
     let mut chart = ChartBuilder::on(&root)
-        .caption("Daily Usage", ("sans-serif", 20))
+        .caption("Daily Usage", ("sans-serif", 100))
         .margin(15)
         .x_label_area_size(20)
         .y_label_area_size(20)

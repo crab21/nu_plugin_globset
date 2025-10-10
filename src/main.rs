@@ -57,7 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     chart
         .configure_mesh()
         .x_labels(x_ticks.len())
-        .x_label_formatter(&|d| {
+        .x_label_formatter(&|_d| {
                 "".to_string()
         })
         .x_desc("Date")
@@ -84,7 +84,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     for (_, (date, _)) in data.iter().enumerate() {
-      if (x_ticks.contains(date) == false) {
+      if x_ticks.contains(date) == false {
           continue;
       } 
       chart.draw_series(std::iter::once(

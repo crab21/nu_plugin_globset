@@ -1,4 +1,3 @@
-
 use std::env;
 
 use chrono::{Datelike, NaiveDate};
@@ -39,8 +38,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut chart = ChartBuilder::on(&root)
         .caption("Daily Usage", ("sans-serif", 100))
         .margin(15)
-        .x_label_area_size(20)
-        .y_label_area_size(20)
+        .x_label_area_size(150)
+        .y_label_area_size(150)
         .build_cartesian_2d(
             min_date..max_date.succ_opt().unwrap().succ_opt().unwrap(),
             0f64..max_usage * 1.2,
@@ -57,9 +56,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     chart
         .configure_mesh()
         .x_labels(x_ticks.len())
-        .x_label_formatter(&|_d| {
-                "".to_string()
-        })
+        .x_label_formatter(&|_d| "".to_string())
+        .y_label_formatter(&|y| format!("{:.2}", y)) // ✅ 关键：保留两位小数
         .x_desc("Date")
         .y_desc("Usage")
         .axis_desc_style(("sans-serif", 50).into_font().color(&BLACK)) // 横纵轴标题字体
@@ -84,16 +82,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     for (_, (date, _)) in data.iter().enumerate() {
-      if x_ticks.contains(date) == false {
-          continue;
-      } 
-      chart.draw_series(std::iter::once(
-          Text::new(
-              date.format("%m-%d").to_string(),
-              (*date, 0.0), // Y 坐标放在轴下
-              ("sans-serif", 30).into_font().color(&BLACK),
-          )
-      ))?;
+        if x_ticks.contains(date) == false {
+            continue;
+        }
+        chart.draw_series(std::iter::once(Text::new(
+            date.format("%m-%d").to_string(),
+            (*date, 0.0), // Y 坐标放在轴下
+            ("sans-serif", 30).into_font().color(&BLACK),
+        )))?;
     }
 
     root.present()?; // 将缓冲区写入 PNG 文件

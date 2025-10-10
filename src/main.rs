@@ -88,7 +88,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         chart.draw_series(std::iter::once(Text::new(
             date.format("%m-%d").to_string(),
             (*date, 0.0), // Y 坐标放在轴下
-            ("sans-serif", 30).into_font().color(&BLACK),
+            ("sans-serif", 30).into_font().color(&BLACK).transform(FontTransform::Rotate90),
         )))?;
     }
 

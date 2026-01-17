@@ -54,17 +54,37 @@ impl PluginCommand for GlobSet {
         call: &EvaluatedCall,
         input: PipelineData,
     ) -> Result<PipelineData, LabeledError> {
+        // 1. 获取 Glob Patterns
         let patterns: Vec<String> = input
             .into_iter()
             .map(|v| v.as_str().unwrap_or_default().to_string())
             .collect();
 
+        // 2. 获取输入文件路径
         let input_path: String = call.req(0)?;
 
+        // 3. 构造 GlobSet
         let mut builder = GlobSetBuilder::new();
         for pat in &patterns {
             builder.add(Glob::new(pat).map_err(|e| LabeledError::new(format!("Invalid glob: {}", e)))?);
         }
         let set = builder.build().map_err(|e| LabeledError::new(format!("Glob build error: {}", e)))?;
 
-        let input_file =
+        // 4. 打开文件准备读取
+        let input_file = File::open(&input_path).map_err(|e| {
+            LabeledError::new(format!("Open error: {}", e)).with_label("Error", call.head)
+        })?;
+        let reader = BufReader::new(input_file);
+
+        // 5. 在内存中收集结果数组
+        let mut results_array = Vec::new();
+
+        for line_res in reader.lines() {
+            let target = line_res.unwrap_or_default();
+            let result_matches = set.matches(&target);
+            
+            // [修复点] 先计算 bool 值，避免 move 后借用错误
+            let is_match = !result_matches.is_empty();
+
+            results_array.push(ResultRecord {
+                matches:

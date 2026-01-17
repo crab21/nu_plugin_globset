@@ -87,4 +87,35 @@ impl PluginCommand for GlobSet {
             let is_match = !result_matches.is_empty();
 
             results_array.push(ResultRecord {
-                matches:
+                matches: result_matches, // 此时 move
+                is_match,                // 使用计算好的值
+                file_path: target,
+            });
+        }
+
+        // 6. 准备输出文件路径
+        let mut temp_file_path = std::env::temp_dir();
+        let file_uuid = Uuid::new_v4().to_string();
+        temp_file_path.push(format!("{}.json", file_uuid));
+
+        let output_file = File::create(&temp_file_path).map_err(|e| {
+            LabeledError::new(format!("Create error: {}", e)).with_label("Error", call.head)
+        })?;
+
+        // 7. 将数组一次性序列化写入文件
+        serde_json::to_writer(output_file, &results_array).map_err(|e| {
+            LabeledError::new(format!("Serialization error: {}", e))
+        })?;
+
+        // 8. 返回文件路径字符串
+        Ok(Value::String {
+            val: temp_file_path.to_string_lossy().to_string(),
+            internal_span: call.head,
+        }
+        .into_pipeline_data())
+    }
+}
+
+fn main() {
+    serve_plugin(&GlobSetPlugin, JsonSerializer)
+}

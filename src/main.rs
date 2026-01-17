@@ -7,7 +7,6 @@ use std::io::{BufRead, BufReader};
 use uuid::Uuid;
 use serde::Serialize;
 
-// 定义结构体，严格保持你原有的字段名
 #[derive(Serialize)]
 struct ResultRecord {
     matches: Vec<usize>,
@@ -55,66 +54,17 @@ impl PluginCommand for GlobSet {
         call: &EvaluatedCall,
         input: PipelineData,
     ) -> Result<PipelineData, LabeledError> {
-        // 1. 获取 Glob Patterns
         let patterns: Vec<String> = input
             .into_iter()
             .map(|v| v.as_str().unwrap_or_default().to_string())
             .collect();
 
-        // 2. 获取输入文件路径
         let input_path: String = call.req(0)?;
 
-        // 3. 构造 GlobSet
         let mut builder = GlobSetBuilder::new();
         for pat in &patterns {
             builder.add(Glob::new(pat).map_err(|e| LabeledError::new(format!("Invalid glob: {}", e)))?);
         }
         let set = builder.build().map_err(|e| LabeledError::new(format!("Glob build error: {}", e)))?;
 
-        // 4. 打开文件并读取
-        let input_file = File::open(&input_path).map_err(|e| {
-            LabeledError::new(format!("Open error: {}", e)).with_label("Error", call.head)
-        })?;
-        let reader = BufReader::new(input_file);
-
-        // --- 你的要求：在外面搞个数组 ---
-        let mut results_array = Vec::new();
-
-        for line_res in reader.lines() {
-            let target = line_res.unwrap_or_default();
-            let result_matches = set.matches(&target);
-            
-            // 构造 Record 放入数组
-            results_array.push(ResultRecord {
-                matches: result_matches,
-                is_match: !result_matches.is_empty(),
-                file_path: target,
-            });
-        }
-
-        // 5. 准备临时文件
-        let mut temp_file_path = std::env::temp_dir();
-        let file_uuid = Uuid::new_v4().to_string();
-        temp_file_path.push(format!("{}.json", file_uuid));
-
-        let output_file = File::create(&temp_file_path).map_err(|e| {
-            LabeledError::new(format!("Create error: {}", e)).with_label("Error", call.head)
-        })?;
-
-        // 6. 最后用 serde_json 一次性序列化成完整的 JSON 数组
-        serde_json::to_writer(output_file, &results_array).map_err(|e| {
-            LabeledError::new(format!("Serialization error: {}", e))
-        })?;
-
-        // 7. 返回文件名字符串
-        Ok(Value::String {
-            val: temp_file_path.to_string_lossy().to_string(),
-            internal_span: call.head,
-        }
-        .into_pipeline_data())
-    }
-}
-
-fn main() {
-    serve_plugin(&GlobSetPlugin, JsonSerializer)
-}
+        let input_file =

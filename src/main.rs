@@ -6,6 +6,8 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use uuid::Uuid;
 use serde::Serialize;
+use serde_json::from_reader;
+
 
 #[derive(Serialize)]
 struct ResultRecord {
@@ -76,12 +78,19 @@ impl PluginCommand for GlobSet {
         })?;
         let reader = BufReader::new(input_file);
 
+        // 2. 解析 JSON 数组
+        let targets: Vec<String> = from_reader(reader)
+            .map_err(|e| LabeledError::new(format!("JSON parse error: {}", e)))?;
+
+
         // 5. 在内存中收集结果数组
         let mut results_array = Vec::new();
 
-        for line_res in reader.lines() {
-            let target = line_res.unwrap_or_default();
-            let result_matches = set.matches(&target);
+        for line_res in targets {
+            let target = line_res;
+            let result_matches = set.matches(target.as_str())
+                .into_iter()
+                .collect::<Vec<usize>>();
             
             // [修复点] 先计算 bool 值，避免 move 后借用错误
             let is_match = !result_matches.is_empty();

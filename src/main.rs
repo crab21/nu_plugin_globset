@@ -3,7 +3,7 @@ use nu_plugin::{EngineInterface, Plugin, PluginCommand };
 use nu_protocol::{ IntoPipelineData, LabeledError, PipelineData, Signature, SyntaxShape, Type, Value};
 use globset::{Glob, GlobSetBuilder};
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{BufReader};
 use uuid::Uuid;
 use serde::Serialize;
 use serde_json::from_reader;
